@@ -1,0 +1,139 @@
+NAME: frontend
+LAST DEPLOYED: Thu Jun 27 21:28:45 2024
+NAMESPACE: default
+STATUS: pending-install
+REVISION: 1
+HOOKS:
+---
+# Source: thunder-frontend/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "frontend-thunder-frontend-test-connection"
+  labels:
+    helm.sh/chart: thunder-frontend-0.1.0
+    app.kubernetes.io/name: thunder-frontend
+    app.kubernetes.io/instance: frontend
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['frontend-thunder-frontend:80']
+  restartPolicy: Never
+MANIFEST:
+---
+# Source: thunder-frontend/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: frontend-thunder-frontend
+  labels:
+    helm.sh/chart: thunder-frontend-0.1.0
+    app.kubernetes.io/name: thunder-frontend
+    app.kubernetes.io/instance: frontend
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+automountServiceAccountToken: true
+---
+# Source: thunder-frontend/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: frontend-secret
+type: Opaque
+data:
+  REDIS_PASSWORD: cmVkaXM=
+  REDIS_MASTER_PASSWORD: cmVkaXM=
+---
+# Source: thunder-frontend/templates/configMap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+data:
+  HOSTNAME: redis-master
+---
+# Source: thunder-frontend/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-thunder-frontend
+  labels:
+    helm.sh/chart: thunder-frontend-0.1.0
+    app.kubernetes.io/name: thunder-frontend
+    app.kubernetes.io/instance: frontend
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: thunder-frontend
+    app.kubernetes.io/instance: frontend
+---
+# Source: thunder-frontend/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-thunder-frontend
+  labels:
+    helm.sh/chart: thunder-frontend-0.1.0
+    app.kubernetes.io/name: thunder-frontend
+    app.kubernetes.io/instance: frontend
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thunder-frontend
+      app.kubernetes.io/instance: frontend
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: thunder-frontend-0.1.0
+        app.kubernetes.io/name: thunder-frontend
+        app.kubernetes.io/instance: frontend
+        app.kubernetes.io/version: "1.16.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      serviceAccountName: frontend-thunder-frontend
+      securityContext:
+        {}
+      containers:
+        - name: thunder-frontend
+          securityContext:
+            {}
+          image: "s6confidence/thunder-frontend:v1"
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: frontend-config
+            - secretRef: 
+                name: frontend-secret
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+
+NOTES:
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services frontend-thunder-frontend)
+  export NODE_IP=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
