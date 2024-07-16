@@ -72,14 +72,14 @@ resources:
      cpu: 100m
      memory: 128Mi
 
-livenessProbe:
-  httpGet:
-    path: /
-    port: http
-readinessProbe:
-  httpGet:
-    path: /
-    port: http
+# livenessProbe:
+#   httpGet:
+#     path: /
+#     port: http
+# readinessProbe:
+#   httpGet:
+#     path: /
+#     port: http
 
 autoscaling:
   enabled: true
@@ -106,7 +106,7 @@ env:
   DB_PASS: "ZXhhbXBsZQ=="
   DB: "endgame"
   DB_USER: "john"
-  DB_HOST: "postgresql"
+  DB_HOST: "postgres-postgresql"
   secret_name: "api-secret"
   config_name: "api-config"
 
